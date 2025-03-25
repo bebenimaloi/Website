@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Analysis Tool</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4285F4;
+            --secondary-color: #34A853;
+            --accent-color: #FBBC05;
+            --light-bg: #f8f9fa;
+            --dark-text: #333;
+            --light-text: #fff;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .intro-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .intro-text {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto 20px;
+        }
+        
+        .upload-section {
+            text-align: center;
+            padding: 30px;
+            background: var(--light-bg);
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .upload-button {
+            display: inline-block;
+            background: var(--primary-color);
+            color: var(--light-text);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: var(--shadow);
+        }
+        
+        .upload-button:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+        }
+        
+        #fileUpload {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .models-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .model-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .model-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .model-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+        
+        .random-forest .model-header {
+            background: #4285F4;
+        }
+        
+        .svm .model-header {
+            background: #34A853;
+        }
+        
+        .decision-tree .model-header {
+            background: #FBBC05;
+        }
+        
+        .model-body {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .model-description {
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+        
+        .model-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .table-container {
+            margin-top: 30px;
+            overflow-x: auto;
+            padding-bottom: 100px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: var(--shadow);
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: relative;
+            font-weight: 500;
+            cursor: help;
+        }
+        
+        th:hover .tooltip {
+            display: block;
+        }
+        
+        .tooltip {
+            display: none;
+            position: absolute;
+            background: white;
+            color: var(--dark-text);
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1000;
+            width: 250px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            white-space: normal;
+            word-wrap: break-word;
+            pointer-events: none;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 5px;
+        }
+        
+        .table-note {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .progress-container {
+            width: 80%;
+            max-width: 500px;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            padding: 3px;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: var(--dark-text);
+        }
+        
+        .progress-percentage {
+            margin-top: 10px;
+            font-size: 16px;
+            color: var(--dark-text);
+        }
+        
+        .steps-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .steps-container::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #ddd;
+            z-index: 1;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: white;
+            background: var(--primary-color);
+        }
+        
+        .step-text {
+            text-align: center;
+            font-size: 0.9rem;
+            max-width: 120px;
+        }
+        
+        .step.active .step-number {
+            background: var(--secondary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .models-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .steps-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .steps-container::before {
+                display: none;
+            }
+            
+            .step {
+                flex-direction: row;
+                margin-bottom: 20px;
+            }
+            
+            .step-number {
+                margin-right: 15px;
+                margin-bottom: 0;
+            }
+        }
+        
+        th:last-child .tooltip {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
+        
+        th:first-child .tooltip {
+            left: 0;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><strong>Machine Learning Analysis for AR Learning Efficacy</strong></h1>
+        
+        <div class="intro-section">
+            <p class="intro-text">
+                This tool helps you analyze educational data to understand the impact of Augmented Reality (AR) on learning outcomes. 
+                Upload your dataset and choose a machine learning model to get started.
+            </p>
+            <div class="steps-container">
+                <div class="step active">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Upload your dataset</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Review your data</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Select a model</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Analyze results</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <h2>Upload Your Dataset</h2>
+            <p>Select a CSV or Excel file containing your educational data</p>
+            <label for="fileUpload" class="upload-button">
+                <i class="fas fa-upload"></i> Choose File
+            </label>
+            <input type="file" id="fileUpload" accept=".csv,.xlsx,.xls" />
+            <div class="file-info">Supported formats: CSV, Excel (.xlsx, .xls) | Maximum file size: 10MB</div>
+        </div>
+        
+        <div id="dataTable" class="table-container"></div>
+        <p class="table-note">Note: Showing first 10 rows of the dataset</p>
+        <button id="toggleRows" class="upload-button" style="margin-top: 10px; display: none;">Show All Rows</button>
+        
+        <div class="models-section">
+            <form action="/process" method="POST" enctype="multipart/form-data" id="randomForestForm">
+                <input type="hidden" name="model" value="random_forest">
+                <div class="model-card random-forest">
+                    <div class="model-header">Random Forest</div>
+                    <div class="model-body">
+                        <div class="model-icon">🌲</div>
+                        <p class="model-description">
+                            Excellent for complex datasets with multiple features. 
+                            Provides feature importance analysis.
+                        </p>
+                    </div>
+                </div>
+            </form>
+            
+            <form action="/process" method="POST" enctype="multipart/form-data" id="svmForm">
+                <input type="hidden" name="model" value="svm">
+                <div class="model-card svm">
+                    <div class="model-header">Support Vector Machine</div>
+                    <div class="model-body">
+                        <div class="model-icon">📊</div>
+                        <p class="model-description">
+                            Great for classification tasks with clear margins between classes.
+                        </p>
+                    </div>
+                </div>
+            </form>
+            
+            <form action="/process" method="POST" enctype="multipart/form-data" id="decisionTreeForm">
+                <input type="hidden" name="model" value="decision_tree">
+                <div class="model-card decision-tree">
+                    <div class="model-header">Decision Tree</div>
+                    <div class="model-body">
+                        <div class="model-icon">🔍</div>
+                        <p class="model-description">
+                            Provides clear, interpretable decision rules. 
+                            Visualizes the decision-making process.
+                        </p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="loading-overlay">
+        <div class="loading-text">Analyzing your data...</div>
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+        </div>
+        <div class="progress-percentage">0%</div>
+    </div>
+
+    <script>
+        const columnDescriptions = {
+            'Age': "Student's age",
+            'Gender': "Student's gender", 
+            'Grade Level': "Student's grade in school",
+            'Cognitive Abilities': "A score indicating a student's cognitive skills",
+            'Engagement Levels': "A score reflecting how engaged the student is",
+            'Pre-Test Scores': "Score before using AR tools",
+            'Post-Test Scores': "Score after using AR tools",
+            'Score Improvement': "The change between post-test and pre-test scores",
+            'Performance': "Student's performance category based on score improvement: High (>15 points), Medium (5-15 points), Extremely High (>25 points)",
+            'Time Spent on AR': "Amount of time spent on AR tools (in minutes)",
+            'Frequency of AR Use': "How frequently student uses AR tools (scale 1-5)"
+        };
+
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit example
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileUpload = document.getElementById('fileUpload');
+            const forms = document.querySelectorAll('form');
+            const modelCards = document.querySelectorAll('.model-card');
+            const loadingOverlay = document.querySelector('.loading-overlay');
+            const progressBar = document.querySelector('.progress-bar');
+            const progressText = document.querySelector('.progress-percentage');
+            const tableNote = document.querySelector('.table-note');
+            const steps = document.querySelectorAll('.step');
+            const toggleButton = document.getElementById('toggleRows');
+            let uploadedFile = null;
+
+            fileUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Check file size
+                if (file.size > MAX_FILE_SIZE) {
+                    alert('File is too large! Maximum size allowed is 10MB');
+                    this.value = ''; // Clear the file input
+                    return;
+                }
+                
+                uploadedFile = file;
+                document.querySelector('.file-info').textContent = `Selected file: ${file.name}`;
+                
+                // Update steps
+                steps[0].classList.remove('active');
+                steps[1].classList.add('active');
+                
+                // Show loading overlay
+                loadingOverlay.style.display = 'flex';
+                updateProgress(0);
+                
+                const reader = new FileReader();
+                tableNote.style.display = 'block';
+
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 5;
+                    if (progress <= 90) {
+                        updateProgress(progress);
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 100);
+
+                reader.onload = function(e) {
+                    let data;
+                    if (file.name.endsWith('.csv')) {
+                        data = e.target.result;
+                        const rows = data.split('\n').map(row => row.split(','));
+                        displayTable(rows);
+                    } else {
+                        data = e.target.result;
+                        const workbook = XLSX.read(data, {type: 'binary'});
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                        displayTable(rows);
+                    }
+                    
+                    // Hide loading overlay after processing
+                    clearInterval(progressInterval);
+                    updateProgress(100);
+                    setTimeout(() => {
+                        loadingOverlay.style.display = 'none';
+                        // Enable model selection
+                        modelCards.forEach(card => {
+                            card.classList.add('enabled');
+                        });
+                        // Update steps
+                        steps[1].classList.remove('active');
+                        steps[2].classList.add('active');
+                    }, 500);
+                };
+
+                if (file.name.endsWith('.csv')) {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsBinaryString(file);
+                }
+            });
+
+            function updateProgress(progress) {
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+            }
+
+            function displayTable(rows) {
+                const tableDiv = document.getElementById('dataTable');
+                let showAllRows = false;
+                
+                function renderTable(showAll) {
+                    let tableHTML = '<table>';
+                    
+                    // Headers with tooltips
+                    if (rows.length > 0) {
+                        tableHTML += '<tr>';
+                        for (let j = 0; j < rows[0].length; j++) {
+                            const columnName = rows[0][j].trim();
+                            const description = columnDescriptions[columnName];
+                            tableHTML += `
+                                <th>
+                                    ${columnName}
+                                    ${description ? `<div class="tooltip">${description}</div>` : ''}
+                                </th>`;
+                        }
+                        tableHTML += '</tr>';
+                    }
+
+                    // Data rows
+                    const rowLimit = showAll ? rows.length : Math.min(11, rows.length);
+                    for (let i = 1; i < rowLimit; i++) {
+                        tableHTML += '<tr>';
+                        for (let j = 0; j < rows[0].length; j++) {
+                            let value = rows[i][j];
+                            // Check if value is a number and format to 2 decimal places
+                            if (!isNaN(value) && value !== '') {
+                                if (rows[0][j] === 'Age' || rows[0][j] === 'Frequency of AR Use') {
+                                    value = Math.round(Number(value));
+                                } else {
+                                    value = Number(value).toFixed(2);
+                                }
+                            }
+                            tableHTML += `<td>${value !== undefined ? value : ''}</td>`;
+                        }
+                        tableHTML += '</tr>';
+                    }
+                    
+                    tableHTML += '</table>';
+                    tableDiv.innerHTML = tableHTML;
+                }
+
+                // Initial render with first 10 rows
+                renderTable(false);
+                
+                // Show toggle button if there are more than 10 rows
+                if (rows.length > 11) {
+                    toggleButton.style.display = 'inline-block';
+                    toggleButton.addEventListener('click', function() {
+                        showAllRows = !showAllRows;
+                        renderTable(showAllRows);
+                        toggleButton.textContent = showAllRows ? 'Show Less Rows' : 'Show All Rows';
+                        document.querySelector('.table-note').textContent = 
+                            showAllRows ? `Note: Showing all ${rows.length - 1} rows` : 'Note: Showing first 10 rows';
+                    });
+                }
+            }
+
+            modelCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    if (!uploadedFile) {
+                        alert('Please upload a dataset first!');
+                        return;
+                    }
+                    
+                    // Update steps
+                    steps[2].classList.remove('active');
+                    steps[3].classList.add('active');
+                    
+                    const form = this.closest('form');
+                    
+                    // Show loading overlay and reset progress
+                    loadingOverlay.style.display = 'flex';
+                    updateProgress(0);
+                    
+                    const formData = new FormData(form);
+                    formData.append('file', uploadedFile);
+                    
+                    // Simulate progress for demonstration
+                    let progress = 0;
+                    const progressInterval = setInterval(() => {
+                        progress += Math.random() * 15;
+                        if (progress > 90) {
+                            progress = 90;
+                            clearInterval(progressInterval);
+                        }
+                        updateProgress(Math.round(progress));
+                    }, 500);
+                    
+                    fetch('/process', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        clearInterval(progressInterval);
+                        updateProgress(100);
+                        setTimeout(() => {
+                            document.body.innerHTML = html;
+                        }, 500);
+                    })
+                    .catch(error => {
+                        clearInterval(progressInterval);
+                        console.error('Error:', error);
+                        alert('An error occurred while processing the data');
+                    })
+                    .finally(() => {
+                        setTimeout(() => {
+                            loadingOverlay.style.display = 'none';
+                        }, 500);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVM Results</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4285F4;
+            --secondary-color: #34A853;
+            --accent-color: #FBBC05;
+            --light-bg: #f8f9fa;
+            --dark-text: #333;
+            --light-text: #fff;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .metric-box {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .metric-box h2 {
+            color: var(--accent-color);
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        
+        .metric-box p {
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+        
+        .visualization-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .classification-report {
+            font-family: monospace;
+            white-space: pre;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: inline-block;
+            background: var(--primary-color);
+            color: var(--light-text);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: var(--shadow);
+            text-decoration: none;
+            z-index: 100;
+        }
+        
+        .back-button:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .metrics-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .metric-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-button">← Back</a>
+    <div class="container">
+        <h1>Support Vector Machine Analysis Results</h1>
+        
+        <div class="metrics-container">
+            <div class="metric-box">
+                <h2>Best Parameters</h2>
+                <p class="metric-description">These are the optimal parameters found through grid search:</p>
+                {% for param, value in best_params.items() %}
+                <p><strong>{{ param|title }}:</strong> {{ value }}</p>
+                {% if param == 'C' %}
+                <p class="metric-description">Regularization parameter - controls trade-off between decision boundary and misclassification</p>
+                {% elif param == 'kernel' %}
+                <p class="metric-description">Kernel type - determines how data is transformed for classification</p>
+                {% elif param == 'gamma' %}
+                <p class="metric-description">Kernel coefficient - defines how far the influence of a single training example reaches</p>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if feature_importance %}
+            <div class="metric-box">
+                <h2>Feature Importance</h2>
+                <p class="metric-description">Feature importance shows how much each feature contributes to the model's decisions. Higher values indicate features that have more influence on predictions in the SVM model.</p>
+                {% for feature, importance in feature_importance.items() %}
+                <p><strong>{{ feature }}:</strong> {{ importance|round(3) }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+            
+        <div class="metric-box">
+            <h2>Model Metrics</h2>
+            <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
+            <p class="metric-description">Overall prediction accuracy - shows how often the model is correct</p>
+            
+            <div class="classification-report">
+                <p class="metric-description">Detailed performance metrics for each class:</p>
+                {{ metrics.classification_report }}
+            </div>
+        </div>
+
+        {% if feature_importance and images.feature_importance %}
+        <div class="visualization-container">
+            <h2>Feature Importance Visualization</h2>
+            <p class="metric-description">This chart visualizes the relative importance of each feature in the SVM model. Features with longer bars have more predictive power and have greater influence on the model's classification decisions.</p>
+            <img src="data:image/png;base64,{{ images.feature_importance }}" 
+                 alt="Feature Importance Plot">
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
