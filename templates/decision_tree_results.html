@@ -141,6 +141,12 @@
         <div class="metrics-container">
             <div class="metric-box">
                 <h2>Model Metrics</h2>
+                <p><strong>Best Parameters:</strong></p>
+                <ul>
+                    {% for param, value in metrics.best_params.items() %}
+                    <p><strong>{{ param }}:</strong> {{ value }}</p>
+                    {% endfor %}
+                </ul>
                 <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
                 <p class="metric-description">Overall prediction accuracy - shows how often the model is correct</p>
                 
