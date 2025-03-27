@@ -167,46 +167,23 @@
         
         <div class="metrics-container">
             <div class="metric-box">
-                <h2>Training Metrics</h2>
-                <p><strong>Accuracy:</strong> {{ train_metrics.accuracy|round(3) }}</p>
-                <p class="metric-description">Percentage of correct predictions on training data</p>
+                <h2>Model Performance Metrics</h2>
+                <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
+                <p class="metric-description">Percentage of correct predictions on test data</p>
                 
-                <p><strong>Precision:</strong> {{ train_metrics.precision|round(3) }}</p>
+                <p><strong>Precision:</strong> {{ metrics.precision|round(3) }}</p>
                 <p class="metric-description">Ability to avoid false positives (higher is better)</p>
                 
-                <p><strong>Recall:</strong> {{ train_metrics.recall|round(3) }}</p>
+                <p><strong>Recall:</strong> {{ metrics.recall|round(3) }}</p>
                 <p class="metric-description">Ability to find all positive cases (higher is better)</p>
                 
-                <p><strong>F1 Score:</strong> {{ train_metrics.f1|round(3) }}</p>
+                <p><strong>F1 Score:</strong> {{ metrics.f1|round(3) }}</p>
                 <p class="metric-description">Balance between precision and recall (higher is better)</p>
                 
                 <p><strong>AUC-ROC Score:</strong> {{ auc_roc }}</p>
                 <p class="metric-description">Measures model's ability to distinguish between classes (1.0 is perfect, 0.5 is random)</p>
             </div>
-
-            <div class="metric-box">
-                <h2>Testing Metrics</h2>
-                <p><strong>Accuracy:</strong> {{ test_metrics.accuracy|round(3) }}</p>
-                <p class="metric-description">How well the model performs on new, unseen data - indicates real-world performance</p>
-                
-                <p><strong>Precision:</strong> {{ test_metrics.precision|round(3) }}</p>
-                <p class="metric-description">When the model predicts a positive result, how often it is correct on new data</p>
-                
-                <p><strong>Recall:</strong> {{ test_metrics.recall|round(3) }}</p>
-                <p class="metric-description">The model's ability to find all relevant cases in the test data</p>
-                
-                <p><strong>F1 Score:</strong> {{ test_metrics.f1|round(3) }}</p>
-                <p class="metric-description">Harmonic mean of precision and recall - provides balanced measure of model effectiveness</p>
-            </div>
         </div>
-        
-        {% if is_overfitting %}
-        <p class="warning">Warning: The model may be overfitting as there is a significant difference between training ({{ train_metrics.accuracy|round(3) }}) and testing ({{ test_metrics.accuracy|round(3) }}) accuracy. This suggests the model performs well on training data but may not generalize well to new data.</p>
-        <p class="metric-description">Overfitting occurs when the model learns the training data too well, including its noise and outliers. This happens when the model is too complex relative to the amount and noisiness of the training data.</p>
-        {% else %}
-        <p>The model shows good generalization with similar performance on training ({{ train_metrics.accuracy|round(3) }}) and testing ({{ test_metrics.accuracy|round(3) }}) data.</p>
-        <p class="metric-description">This indicates the model has learned meaningful patterns in the data rather than memorizing the training examples, and should perform reliably on new data.</p>
-        {% endif %}
         
         <div class="metric-box">
             <h2>Best Model Parameters</h2>
