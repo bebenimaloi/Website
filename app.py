@@ -105,20 +105,25 @@ def perform_decision_tree_analysis(X_train, X_test, y_train, y_test):
     return metrics, images, feature_importances
 
 def perform_random_forest_analysis(X_train, X_test, y_train, y_test):
-    # Define parameter grid for GridSearchCV
+    # Simplified parameter grid with fewer combinations
     param_grid = {
-        'n_estimators': [50, 100, 200],
-        'max_depth': [None, 10, 20],
-        'max_features': ['sqrt', 'log2', None],
-        'min_samples_split': [2, 5, 10]
+        'n_estimators': [100],  # Reduced from [50, 100, 200]
+        'max_depth': [10, 20],  # Reduced from [None, 10, 20]
+        'max_features': ['sqrt'],  # Reduced from ['sqrt', 'log2', None]
+        'min_samples_split': [5]  # Reduced from [2, 5, 10]
     }
 
-    # Initialize and run GridSearchCV
+    # Initialize and run GridSearchCV with optimized parameters
     grid_search = GridSearchCV(
-        RandomForestClassifier(random_state=42),
+        RandomForestClassifier(
+            random_state=42,
+            n_jobs=-1,  # Parallel processing within each tree
+            warm_start=True,  # Enable warm start for faster fitting
+            class_weight='balanced'  # Better handling of imbalanced datasets
+        ),
         param_grid,
-        cv=5,
-        n_jobs=-1,
+        cv=3,  # Reduced from 5 to 3 folds
+        n_jobs=-1,  # Parallel processing for GridSearchCV
         verbose=1
     )
     grid_search.fit(X_train, y_train)
