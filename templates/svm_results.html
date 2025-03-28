@@ -151,7 +151,7 @@
         <div class="metrics-container">
             <div class="metric-box">
                 <h2>Best Parameters</h2>
-                <p class="metric-description">These are the optimal parameters found through grid search:</p>
+                <p class="metric-description">These are the optimal parameters found through grid search that control how the SVM model learns and makes decisions:</p>
                 {% for param, value in best_params.items() %}
                 <p><strong>{{ param|title }}:</strong> {{ value }}</p>
                 {% if param == 'C' %}
@@ -164,34 +164,33 @@
                 {% endfor %}
             </div>
 
-            {% if feature_importance %}
             <div class="metric-box">
-                <h2>Feature Importance</h2>
-                <p class="metric-description">Feature importance shows how much each feature contributes to the model's decisions. Higher values indicate features that have more influence on predictions in the SVM model.</p>
-                {% for feature, importance in feature_importance.items() %}
-                <p><strong>{{ feature }}:</strong> {{ importance|round(3) }}</p>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-            
-        <div class="metric-box">
-            <h2>Model Metrics</h2>
-            <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
-            <p class="metric-description">Overall prediction accuracy - shows how often the model is correct</p>
-            
-            <div class="classification-report">
-                <p class="metric-description">Detailed performance metrics for each class:</p>
-                {{ metrics.classification_report }}
+                <h2>Model Metrics</h2>
+                <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
+                <p class="metric-description">Overall prediction accuracy - shows how often the model is correct</p>
+                
+                <div class="classification-report">
+                    <p class="metric-description">Detailed performance metrics for each class:</p>
+                    {{ metrics.classification_report }}
+                </div>
             </div>
         </div>
 
         {% if feature_importance and images.feature_importance %}
         <div class="visualization-container">
-            <h2>Feature Importance Visualization</h2>
-            <p class="metric-description">This chart visualizes the relative importance of each feature in the SVM model. Features with longer bars have more predictive power and have greater influence on the model's classification decisions.</p>
-            <img src="data:image/png;base64,{{ images.feature_importance }}" 
-                 alt="Feature Importance Plot">
+            <h2>Feature Importance Analysis</h2>
+            <p class="metric-description">Feature importance shows how much each feature contributes to the model's decisions. Higher values indicate features that have more influence on predictions in the SVM model.</p>
+            
+            <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px;">
+                <div style="flex: 1;">
+                    {% for feature, importance in feature_importance.items() %}
+                    <p><strong>{{ feature }}:</strong> {{ importance|round(3) }}</p>
+                    {% endfor %}
+                </div>
+                <div style="flex: 2;">
+                    <img src="data:image/png;base64,{{ images.feature_importance }}" alt="Feature Importances">
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>
