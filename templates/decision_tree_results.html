@@ -35,7 +35,7 @@
         }
         
         h2 {
-            color: var(--primary-color);
+            color: var(--accent-color);
             margin-top: 30px;
             margin-bottom: 20px;
             font-size: 1.8rem;
@@ -140,13 +140,17 @@
         
         <div class="metrics-container">
             <div class="metric-box">
-                <h2>Model Metrics</h2>
-                <p><strong>Best Parameters:</strong></p>
+                <h2>Best Parameters</h2>
+                <p class="metric-description">These are the optimal hyperparameters found through grid search that produced the best model performance. These parameters control the tree's structure and complexity to prevent overfitting while maintaining good prediction accuracy.</p>
                 <ul>
                     {% for param, value in metrics.best_params.items() %}
                     <p><strong>{{ param }}:</strong> {{ value }}</p>
                     {% endfor %}
                 </ul>
+            </div>
+
+            <div class="metric-box">
+                <h2>Model Metrics</h2>
                 <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
                 <p class="metric-description">Overall prediction accuracy - shows how often the model is correct</p>
                 
@@ -162,20 +166,22 @@
                 <p><strong>AUC-ROC Score:</strong> {{ metrics.auc_roc|round(3) }}</p>
                 <p class="metric-description">Measures model's ability to distinguish between classes (1.0 is perfect, 0.5 is random)</p>
             </div>
-
-            <div class="metric-box">
-                <h2>Feature Importance</h2>
-                <p class="metric-description">Feature importance shows how much each feature contributes to the model's decisions. Higher values indicate features that have more influence on predictions when the decision tree splits data.</p>
-                {% for feature, importance in feature_importances %}
-                <p><strong>{{ feature }}:</strong> {{ importance|round(3) }}</p>
-                {% endfor %}
-            </div>
         </div>
 
         <div class="visualization-container">
-            <h2>Feature Importance Visualization</h2>
-            <p class="metric-description">This chart visualizes the relative importance of each feature in the decision tree model. Features with longer bars have more predictive power and were used more frequently in critical decision points within the tree structure.</p>
-            <img src="data:image/png;base64,{{ images.feature_importance }}" alt="Feature Importances">
+            <h2>Feature Importance Analysis</h2>
+            <p class="metric-description">Feature importance shows how much each feature contributes to the model's decisions. Higher values indicate features that have more influence on predictions when the decision tree splits data.</p>
+            
+            <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px;">
+                <div style="flex: 1;">
+                    {% for feature, importance in feature_importances %}
+                    <p><strong>{{ feature }}:</strong> {{ importance|round(3) }}</p>
+                    {% endfor %}
+                </div>
+                <div style="flex: 2;">
+                    <img src="data:image/png;base64,{{ images.feature_importance }}" alt="Feature Importances">
+                </div>
+            </div>
         </div>
     </div>
 </body>
