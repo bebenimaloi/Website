@@ -57,7 +57,13 @@ def perform_decision_tree_analysis(X_train, X_test, y_train, y_test):
     try:
         # Feature Importance Plot with improved styling
         feature_importances = best_model.feature_importances_
-        feature_importance_dict = dict(zip(X_train.columns, feature_importances))
+        feature_names = X_train.columns
+        feature_importance_dict = dict(zip(feature_names, feature_importances))
+        
+        # Sort features by importance
+        sorted_features = sorted(feature_importance_dict.items(), key=lambda x: x[1])
+        feature_names = [x[0] for x in sorted_features]
+        importances = [x[1] for x in sorted_features]
         
         # Custom Skyblue Gradient
         custom_cmap = mcolors.LinearSegmentedColormap.from_list(
@@ -67,13 +73,16 @@ def perform_decision_tree_analysis(X_train, X_test, y_train, y_test):
         fig, ax = plt.subplots(figsize=(10, 6))
         
         # Normalize values for gradient
-        norm = plt.Normalize(vmin=min(feature_importances), 
-                           vmax=max(feature_importances))
-        colors = custom_cmap(norm(feature_importances))
+        norm = plt.Normalize(vmin=min(importances), vmax=max(importances))
+        colors = custom_cmap(norm(importances))
         
-        # Plot bars
-        bars = ax.barh(X_train.columns, feature_importances, 
-                      color=colors, edgecolor=None, alpha=0.9)
+        # Plot bars with custom styling
+        bars = ax.barh(feature_names, importances, color=colors, 
+                      edgecolor=None, alpha=0.9)
+        
+        # Remove bar edges for softer look
+        for bar in bars:
+            bar.set_linewidth(0)
         
         # Style adjustments
         ax.set_xlabel("Importance", fontsize=14, fontweight='bold', color="#444444")
@@ -81,16 +90,14 @@ def perform_decision_tree_analysis(X_train, X_test, y_train, y_test):
         ax.set_title("Decision Tree Feature Importance", 
                     fontsize=16, fontweight='bold', color="#222222")
         
-        # Add grid and remove spines
+        # Add light grid and remove spines
         ax.xaxis.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         
-        # Keep most important feature on top
-        ax.invert_yaxis()
-        
         plt.tight_layout()
         
+        # Save plot to base64 string
         buf = io.BytesIO()
         plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
         buf.seek(0)
@@ -105,25 +112,25 @@ def perform_decision_tree_analysis(X_train, X_test, y_train, y_test):
     return metrics, images, feature_importances
 
 def perform_random_forest_analysis(X_train, X_test, y_train, y_test):
-    # Simplified parameter grid with fewer combinations
+    # Keep simplified parameter grid for fast analysis
     param_grid = {
-        'n_estimators': [100],  # Reduced from [50, 100, 200]
-        'max_depth': [10, 20],  # Reduced from [None, 10, 20]
-        'max_features': ['sqrt'],  # Reduced from ['sqrt', 'log2', None]
-        'min_samples_split': [5]  # Reduced from [2, 5, 10]
+        'n_estimators': [100],
+        'max_depth': [10, 20],
+        'max_features': ['sqrt'],
+        'min_samples_split': [5]
     }
 
     # Initialize and run GridSearchCV with optimized parameters
     grid_search = GridSearchCV(
         RandomForestClassifier(
             random_state=42,
-            n_jobs=-1,  # Parallel processing within each tree
-            warm_start=True,  # Enable warm start for faster fitting
-            class_weight='balanced'  # Better handling of imbalanced datasets
+            n_jobs=-1,
+            warm_start=True,
+            class_weight='balanced'
         ),
         param_grid,
-        cv=3,  # Reduced from 5 to 3 folds
-        n_jobs=-1,  # Parallel processing for GridSearchCV
+        cv=3,
+        n_jobs=-1,
         verbose=1
     )
     grid_search.fit(X_train, y_train)
@@ -140,18 +147,20 @@ def perform_random_forest_analysis(X_train, X_test, y_train, y_test):
         'f1': f1_score(y_test, y_test_pred, average='weighted')
     }
 
-    # Calculate AUC-ROC
+    # Calculate AUC-ROC with binarization
     lb = LabelBinarizer()
     y_test_binarized = lb.fit_transform(y_test)
     y_test_pred_binarized = lb.transform(y_test_pred)
     auc_roc = roc_auc_score(y_test_binarized, y_test_pred_binarized, 
                            average='weighted', multi_class='ovr')
 
-    # Feature importance
+    # Feature importance using pandas DataFrame for better organization
     importances = best_model.feature_importances_
-    feature_importance = dict(zip(X_train.columns, importances))
-    sorted_importance = dict(sorted(feature_importance.items(), 
-                                  key=lambda x: x[1], reverse=True))
+    feature_importance = pd.DataFrame({
+        'Feature': X_train.columns,
+        'Importance': importances
+    })
+    feature_importance = feature_importance.sort_values(by='Importance', ascending=False)
 
     # Create visualization with improved styling
     images = {}
@@ -164,21 +173,26 @@ def perform_random_forest_analysis(X_train, X_test, y_train, y_test):
         fig, ax = plt.subplots(figsize=(10, 6))
         
         # Normalize values for gradient
-        norm = plt.Normalize(vmin=min(sorted_importance.values()), 
-                           vmax=max(sorted_importance.values()))
-        colors = custom_cmap(norm(list(sorted_importance.values())))
+        norm = plt.Normalize(vmin=feature_importance['Importance'].min(), 
+                           vmax=feature_importance['Importance'].max())
+        colors = custom_cmap(norm(feature_importance['Importance']))
         
-        # Plot bars
-        bars = ax.barh(list(sorted_importance.keys()), 
-                      list(sorted_importance.values()),
+        # Plot bars with improved styling
+        bars = ax.barh(feature_importance['Feature'], 
+                      feature_importance['Importance'],
                       color=colors, edgecolor=None, alpha=0.9)
+        
+        # Remove bar edges for softer look
+        for bar in bars:
+            bar.set_linewidth(0)
         
         # Style adjustments
         ax.set_xlabel("Importance", fontsize=14, fontweight='bold', color="#444444")
         ax.set_ylabel("Features", fontsize=14, fontweight='bold', color="#444444")
-        ax.set_title("Random Forest Feature Importance", fontsize=16, fontweight='bold', color="#222222")
+        ax.set_title("Random Forest Feature Importance", 
+                    fontsize=16, fontweight='bold', color="#222222")
         
-        # Add grid and remove spines
+        # Add light grid and remove spines
         ax.xaxis.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -188,6 +202,7 @@ def perform_random_forest_analysis(X_train, X_test, y_train, y_test):
         
         plt.tight_layout()
         
+        # Save plot to base64 string
         buf = io.BytesIO()
         plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
         buf.seek(0)
@@ -196,8 +211,12 @@ def perform_random_forest_analysis(X_train, X_test, y_train, y_test):
     finally:
         plt.close('all')
 
+    # Convert feature importance to dictionary for template
+    feature_importance_dict = dict(zip(feature_importance['Feature'], 
+                                     feature_importance['Importance']))
+
     return (grid_search.best_params_, test_metrics, auc_roc, 
-            sorted_importance, images)
+            feature_importance_dict, images)
 
 def perform_svm_analysis(X_train, X_test, y_train, y_test):
     # Store column names before scaling
@@ -229,12 +248,19 @@ def perform_svm_analysis(X_train, X_test, y_train, y_test):
     best_model = grid_search.best_estimator_
     y_pred = best_model.predict(X_test_scaled)
 
-    # Calculate metrics
+    # Calculate comprehensive metrics
     metrics = {
         'accuracy': accuracy_score(y_test, y_pred),
         'classification_report': classification_report(y_test, y_pred),
-        'confusion_matrix': confusion_matrix(y_test, y_pred).tolist()
+        'confusion_matrix': confusion_matrix(y_test, y_pred).tolist(),
+        'precision': classification_report(y_test, y_pred, output_dict=True)['weighted avg']['precision'],
+        'recall': classification_report(y_test, y_pred, output_dict=True)['weighted avg']['recall'],
+        'f1': classification_report(y_test, y_pred, output_dict=True)['weighted avg']['f1-score']
     }
+
+    # Add AUC-ROC for binary classification
+    if len(np.unique(y_test)) == 2:
+        metrics['auc_roc'] = roc_auc_score(y_test, y_pred)
 
     # Feature importance for linear kernel
     feature_importance = None
@@ -242,8 +268,9 @@ def perform_svm_analysis(X_train, X_test, y_train, y_test):
     
     if best_model.kernel == 'linear' and feature_names is not None:
         coef = np.abs(best_model.coef_).flatten()
-        feature_importance = dict(zip(feature_names, coef))
-        feature_importance = dict(sorted(feature_importance.items(), key=lambda x: x[1], reverse=True))
+        feature_importance = pd.DataFrame({'Feature': feature_names, 'Importance': coef})
+        feature_importance = feature_importance.sort_values(by='Importance', ascending=False)
+        feature_importance_dict = dict(zip(feature_importance['Feature'], feature_importance['Importance']))
 
         try:
             # Custom Skyblue Gradient
@@ -254,21 +281,25 @@ def perform_svm_analysis(X_train, X_test, y_train, y_test):
             fig, ax = plt.subplots(figsize=(10, 6))
             
             # Normalize values for gradient
-            norm = plt.Normalize(vmin=min(feature_importance.values()), 
-                               vmax=max(feature_importance.values()))
-            colors = custom_cmap(norm(list(feature_importance.values())))
+            norm = plt.Normalize(vmin=feature_importance['Importance'].min(), 
+                               vmax=feature_importance['Importance'].max())
+            colors = custom_cmap(norm(feature_importance['Importance']))
             
-            # Plot bars
-            bars = ax.barh(list(feature_importance.keys()), 
-                          list(feature_importance.values()),
+            # Plot bars with improved styling
+            bars = ax.barh(feature_importance['Feature'], 
+                          feature_importance['Importance'],
                           color=colors, edgecolor=None, alpha=0.9)
+            
+            # Remove bar edges for softer look
+            for bar in bars:
+                bar.set_linewidth(0)
             
             # Style adjustments
             ax.set_xlabel("Importance", fontsize=14, fontweight='bold', color="#444444")
             ax.set_ylabel("Features", fontsize=14, fontweight='bold', color="#444444")
             ax.set_title("SVM Feature Importance", fontsize=16, fontweight='bold', color="#222222")
             
-            # Add grid and remove spines
+            # Add light grid and remove spines
             ax.xaxis.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
@@ -278,6 +309,7 @@ def perform_svm_analysis(X_train, X_test, y_train, y_test):
             
             plt.tight_layout()
             
+            # Save plot to base64 string
             buf = io.BytesIO()
             plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
             buf.seek(0)
@@ -286,7 +318,7 @@ def perform_svm_analysis(X_train, X_test, y_train, y_test):
         finally:
             plt.close('all')
 
-    return grid_search.best_params_, metrics, feature_importance, images
+    return grid_search.best_params_, metrics, feature_importance_dict if feature_importance is not None else None, images
 
 @app.route('/')
 def index():
