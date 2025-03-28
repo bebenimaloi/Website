@@ -167,48 +167,48 @@
         
         <div class="metrics-container">
             <div class="metric-box">
-                <h2>Model Performance Metrics</h2>
+                <h2>Best Parameters</h2>
+                <p class="metric-description">These parameters were selected through grid search to optimize model performance. They control aspects like tree depth, number of trees, and how decisions are made.</p>
+                <ul>
+                    {% for param, value in best_params.items() %}
+                    <p><strong>{{ param }}:</strong> {{ value }}</p>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="metric-box">
+                <h2>Model Metrics</h2>
                 <p><strong>Accuracy:</strong> {{ metrics.accuracy|round(3) }}</p>
-                <p class="metric-description">Percentage of correct predictions on test data</p>
+                <p class="metric-description">Overall prediction accuracy - shows how often the model is correct</p>
                 
                 <p><strong>Precision:</strong> {{ metrics.precision|round(3) }}</p>
-                <p class="metric-description">Ability to avoid false positives (higher is better)</p>
+                <p class="metric-description">When model predicts a class, how often it is correct</p>
                 
                 <p><strong>Recall:</strong> {{ metrics.recall|round(3) }}</p>
-                <p class="metric-description">Ability to find all positive cases (higher is better)</p>
+                <p class="metric-description">How well the model identifies all instances of each class</p>
                 
                 <p><strong>F1 Score:</strong> {{ metrics.f1|round(3) }}</p>
-                <p class="metric-description">Balance between precision and recall (higher is better)</p>
+                <p class="metric-description">Harmonic mean of precision and recall - balanced measure of model performance</p>
                 
                 <p><strong>AUC-ROC Score:</strong> {{ auc_roc }}</p>
                 <p class="metric-description">Measures model's ability to distinguish between classes (1.0 is perfect, 0.5 is random)</p>
             </div>
         </div>
-        
-        <div class="metric-box">
-            <h2>Best Model Parameters</h2>
-            <p class="metric-description">These parameters were selected through grid search to optimize model performance. They control aspects like tree depth, number of trees, and how decisions are made.</p>
-            <ul>
-                {% for param, value in best_params.items() %}
-                <li><strong>{{ param }}:</strong> {{ value }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="metric-box">
-            <h2>Feature Importance</h2>
-            <p class="metric-description">Random Forests calculate feature importance based on how much each feature decreases impurity when used in tree splits. Features with higher importance have more predictive power in the model.</p>
-            <ul>
-                {% for feature, importance in feature_importance.items() %}
-                <li><strong>{{ feature }}:</strong> {{ importance|round(4) }}</li>
-                {% endfor %}
-            </ul>
-        </div>
 
         <div class="visualization-container">
-            <h2>Feature Importance Visualization</h2>
-            <p class="metric-description">This chart helps identify which variables drive the model's decisions. Features with higher importance may represent key factors in your dataset that strongly influence the outcome you're predicting.</p>
-            <img src="data:image/png;base64,{{ images.feature_importance }}" alt="Feature Importances">
+            <h2>Feature Importance Analysis</h2>
+            <p class="metric-description">Random Forests calculate feature importance based on how much each feature decreases impurity when used in tree splits. Features with higher importance have more predictive power in the model.</p>
+            
+            <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px;">
+                <div style="flex: 1;">
+                    {% for feature, importance in feature_importance.items() %}
+                    <p><strong>{{ feature }}:</strong> {{ importance|round(3) }}</p>
+                    {% endfor %}
+                </div>
+                <div style="flex: 2;">
+                    <img src="data:image/png;base64,{{ images.feature_importance }}" alt="Feature Importances">
+                </div>
+            </div>
         </div>
     </div>
 </body>
